@@ -1,3 +1,5 @@
+#!/usr/bin/awk -f
+
 {
 	#optional domain name. add here as ".mydomain"
 	optionaldomain = "";
