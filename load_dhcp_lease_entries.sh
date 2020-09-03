@@ -1,5 +1,5 @@
 #!/bin/sh
 
-dhcpleasesParser /var/db/dhcpd.leases | sort | uniq > /usr/local/etc/unbound/dhcp_lease_entries.conf
+dhcpd-lease-parser.awk /var/db/dhcpd.leases | sort | uniq > /usr/local/etc/unbound/dhcp_lease_entries.conf
 
 service unbound reload
