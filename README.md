@@ -11,7 +11,7 @@ awk script to parse DHCP leases handed out by the ISC DHCP server and parse them
 
 ### Background
 
-Having used pfSense for years, I decided to try my hand at rolling my own FreeBSD-based router. I used the dhcpd port from OpenBSD (/usr/ports/net/dhcpd) and chose to go with unbound as my DNS resolver just for simplicity. This is a common configuration within pfSense and OPNsense. Both of those platforms include an option to register the hostname from dhcpd leases within the unbound DNS config. This frees you from using IP addresses to reference local machines instead of hostnames
+Having used pfSense for years, I decided to try my hand at rolling my own FreeBSD-based router. I used the dhcpd port from OpenBSD (/usr/ports/net/dhcpd) and chose to go with unbound as my DNS resolver just for simplicity. This is a common configuration within pfSense and OPNsense. Both of those platforms include an option to register the hostname from dhcpd leases within the unbound DNS config. This lets you use hostnames to reference local machines instead of IP addresses. Basic stuff, or at least I thought.
 
 Unfortunately I couldn't find an out-of-the-box method for taking the info from these dhcpd leases and registering the IP address/hostname combinations with unbound. After studying both pfSense and OPNsense, I realized that this functionality is handled by some additional scripts unique to each project. Typically there is a file watcher on the dhcpd lease file, which kicks off some additional parsing scripts each time the file is modified. OPNsense seemed like it was using Python-based scripts, while pfSense seemed to be relying on a much older Perl script. I thought about installing Python on my router but wanted to avoid that if possible.
 
