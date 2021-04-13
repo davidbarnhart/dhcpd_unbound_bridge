@@ -6,11 +6,11 @@ BEGIN {
 }
 
 END {
-	for (hostname in ipaddress_array)
-		printf "local-data: \"" hostname optionaldomain " IN A " ipaddress_array[hostname] "\"\n";
+	for (macaddress in ipaddress_array)
+		printf "local-data: \"" hostname_array[macaddress]optionaldomain " IN A " ipaddress_array[macaddress] "\"\n";
 
-	for (hostname in ipaddress_array)
-		printf "local-data-ptr: \"" ipaddress_array[hostname] " " hostname optionaldomain "\"\n"
+	for (macaddress in ipaddress_array)
+		printf "local-data-ptr: \"" ipaddress_array[macaddress] " " hostname_array[macaddress]optionaldomain "\"\n"
 
 }
 
@@ -21,8 +21,6 @@ END {
 	missinghostname = 1; # but we don't yet know the hostname of for this particular lease
 	
 	ipaddress = $2;
-
-	#printf "Found ipaddress: " ipaddress "\n";
 }
 
 /\tabandoned;/ {
@@ -47,37 +45,50 @@ END {
 	}
 }
 
+/hardware ethernet/ {
+        gsub(/;/,"");
+        macaddress = $3;
+}
+
 /client-hostname/ {
 	gsub(/"/, "");
 	gsub(/;$/, "");
-	hostname = $2;
-	missinghostname = 0;
+	declared_hostname = $2;
 }
 
 /\}/ {
 	# this marks the end of a lease block
-	# we need to evaluate the lease to see if it's valid and should be included in the output
 
-	#printf "End of bracket reached\n";
-	#printf "abandonedencountered: " abandonedencountered "\n";
-	#printf "expired: " expired "\n";
-	if (abandonedencountered + expired + missinghostname == 0)  {
+	# we need to evaluate the lease to see if it's valid and should be included in the output
+	if (abandonedencountered + expired == 0)  {
 		# now that we've determined that this appears to be a valid lease,
-		# we need to check to see whether it's actually the latest lease or not.
+		# we need to decide which hostname to use (ugly hack!)
+
+		"grep " macaddress " ./mappings.db | awk '{ print $2 }'" | getline mapped_hostname
+
+		if (length(mapped_hostname) == 0) {
+				hostname = declared_hostname;
+		} else {
+				hostname = mapped_hostname;
+		}
+
+		# Then we need to check to see whether it's actually the latest lease or not.
 		# If a lease exists with a newer/greater enddate, then this lease should be ignored.
 		
-		if (hostname in ipaddress_array) {
+		if (macaddress in ipaddress_array) {
 			# we already have a lease recorded for this hostname
 			# check the lease enddate to see if this lease is newer than the one we had previously recorded
-			if (enddate_array[hostname] < enddate) {
-				ipaddress_array[hostname] = ipaddress;
-				enddate_array[hostname] = enddate;
+			if (enddate_array[macaddress] < enddate) {
+				ipaddress_array[macaddress] = ipaddress;
+				hostname_array[macaddress] = hostname;
+				enddate_array[macaddress] = enddate;
 			}
 		}
 		else
 		{
-			ipaddress_array[hostname] = ipaddress;
-			enddate_array[hostname] = enddate;
+			ipaddress_array[macaddress] = ipaddress;
+			hostname_array[macaddress] = hostname;
+			enddate_array[macaddress] = enddate;
 		}
 	}
 }
