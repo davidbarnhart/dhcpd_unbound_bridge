@@ -18,8 +18,11 @@ END {
 	# found the beginning of a release block
 	abandonedencountered = 0; # we'll initially assume that the release hasn't been abandoned
 	expired = 0; # we'll also initially assume that the release hasn't expired
-	missinghostname = 1; # but we don't yet know the hostname of for this particular lease
-	
+	mapped_hostname = "";
+	declared_hostname = "";
+	hostname = "";
+	macaddress = "";	
+
 	ipaddress = $2;
 }
 
