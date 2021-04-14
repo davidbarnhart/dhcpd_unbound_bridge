@@ -1,16 +1,42 @@
 #!/usr/bin/awk -f
 
 BEGIN {
-	#optional domain name. add here as ".mydomain"
-	optionaldomain = "";
+
+	# settings
+	optionaldomain = ""; # optional domain name. add here as ".mydomain"
+	output_human = 0;    # set to 1 to output human-readable lease information
+	output_record = 1;   # set to 1 to output A records 
+	output_ptr = 1;      # set to 1 to output PTR records
 }
 
 END {
-	for (macaddress in ipaddress_array)
-		printf "local-data: \"" hostname_array[macaddress]optionaldomain " IN A " ipaddress_array[macaddress] "\"\n";
 
-	for (macaddress in ipaddress_array)
-		printf "local-data-ptr: \"" ipaddress_array[macaddress] " " hostname_array[macaddress]optionaldomain "\"\n"
+	if (output_human == 1) { 
+		for (macaddress in ipaddress_array) 
+			printf  "mac " macaddress ", " \
+				"host " hostname_array[macaddress] ", " \
+				"ip " ipaddress_array[macaddress] ", " \
+				timeleft_array[macaddress] " seconds left on the lease" \
+				"\n";
+	}
+		
+	if (output_record == 1) { 
+		for (macaddress in ipaddress_array)
+			printf  "local-data: \"" \
+				hostname_array[macaddress]optionaldomain \
+				" IN A " \
+				ipaddress_array[macaddress] "\"" \
+				"\n";
+	} 
+
+	if (output_ptr == 1) { 
+		for (macaddress in ipaddress_array)
+			printf  "local-data-ptr: \"" \
+				ipaddress_array[macaddress] \
+				" " \
+				hostname_array[macaddress]optionaldomain "\"" \
+				"\n";
+	} 
 
 }
 
@@ -51,6 +77,8 @@ END {
 /hardware ethernet/ {
         gsub(/;/,"");
         macaddress = $3;
+	gsub(/:/,"");
+	fallback_hostname = $3;
 }
 
 /client-hostname/ {
@@ -75,6 +103,10 @@ END {
 				hostname = mapped_hostname;
 		}
 
+		if (length(hostname) == 0) {
+			hostname = fallback_hostname;
+		} 
+
 		# Then we need to check to see whether it's actually the latest lease or not.
 		# If a lease exists with a newer/greater enddate, then this lease should be ignored.
 		
@@ -85,6 +117,7 @@ END {
 				ipaddress_array[macaddress] = ipaddress;
 				hostname_array[macaddress] = hostname;
 				enddate_array[macaddress] = enddate;
+				timeleft_array[macaddress] = enddate-currentdate;
 			}
 		}
 		else
@@ -92,6 +125,8 @@ END {
 			ipaddress_array[macaddress] = ipaddress;
 			hostname_array[macaddress] = hostname;
 			enddate_array[macaddress] = enddate;
+			timeleft_array[macaddress] = enddate-currentdate;
 		}
 	}
 }
+
