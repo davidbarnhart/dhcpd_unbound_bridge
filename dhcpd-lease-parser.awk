@@ -3,7 +3,7 @@
 BEGIN {
 
 	# settings
-	optionaldomain = ""; # optional domain name. add here as ".mydomain"
+	optionaldomain = DOMAIN; # optional domain name. this should get fed to the script as a parameter
 	output_human = 0;    # set to 1 to output human-readable lease information
 	output_record = 1;   # set to 1 to output A records 
 	output_ptr = 1;      # set to 1 to output PTR records
@@ -13,7 +13,7 @@ END {
 
 	if (output_human == 1) { 
 		for (macaddress in ipaddress_array) 
-			printf  "mac " macaddress ", " \
+			printf  "# mac " macaddress ", " \
 				"host " hostname_array[macaddress] ", " \
 				"ip " ipaddress_array[macaddress] ", " \
 				timeleft_array[macaddress] " seconds left on the lease" \
@@ -46,6 +46,7 @@ END {
 	expired = 0; # we'll also initially assume that the release hasn't expired
 	mapped_hostname = "";
 	declared_hostname = "";
+	fallback_hostname = "";
 	hostname = "";
 	macaddress = "";	
 
@@ -56,7 +57,7 @@ END {
 	abandonedencountered = 1; # we encountered the row that marks this leases as expired. we ultimately won't use this lease
 }
 
-/^[ \t]ends/ {
+/[[:space:]]ends/ {
 	gsub(/ends/, "");
 	sub($1, "");
 	gsub(/UTC;/, "");
@@ -92,10 +93,13 @@ END {
 
 	# we need to evaluate the lease to see if it's valid and should be included in the output
 	if (abandonedencountered + expired == 0)  {
+
 		# now that we've determined that this appears to be a valid lease,
 		# we need to decide which hostname to use (ugly hack!)
-
-		"grep " macaddress " ./mappings.db | awk '{ print $2 }'" | getline mapped_hostname
+		#"grep " macaddress " ./mappings.db | awk '{ print $2 }'" | getline mapped_hostname
+		lookup_command = "grep " macaddress " "MAPPINGSFILE" | awk '{ print $2 }'"
+		lookup_command | getline mapped_hostname
+		close(lookup_command)
 
 		if (length(mapped_hostname) == 0) {
 				hostname = declared_hostname;
@@ -105,8 +109,8 @@ END {
 
 		if (length(hostname) == 0) {
 			hostname = fallback_hostname;
-		} 
-
+		}
+		
 		# Then we need to check to see whether it's actually the latest lease or not.
 		# If a lease exists with a newer/greater enddate, then this lease should be ignored.
 		
