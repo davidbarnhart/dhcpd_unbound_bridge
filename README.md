@@ -5,9 +5,11 @@ awk script to parse DHCP leases handed out by the ISC DHCP server and parse them
 
 1. Place the dhcpd-lease-parser.awk script somewhere like /usr/local/sbin and make sure it's executable (chmod 755)
 2. Place the load_dhcp_lease_entries.sh script in the same directory as the unbound configuration files (e.g. /usr/local/etc/unbound/) and make sure it's also executable.
-3. Enter your mappings into the file mappings.db in a `MA:CA:DD:RE:SS badasshostname` format (note the space)
-3. Edit the unbound configuration file (e.g. /usr/local/etc/unbound/unbound.conf) and add an include line to the parsed file that is created by the load_dhcp_lease_entries.sh script (e.g. include "/usr/local/etc/unbound/dhcp_lease_entries.conf")
-4. Add a cron job for root to execute the bash script every five minutes, which refreshes the parsed leases files and reloads unbound: */5	*	*	*	*	root	/usr/local/etc/unbound/load_dhcp_lease_entries.sh
+3. (optional) Enter your mappings into the mappings.db file (which is just a text file) in a `MA:CA:DD:RE:SS myhostname` format (note the space).
+4. Edit the unbound configuration file (e.g. /usr/local/etc/unbound/unbound.conf) and add an include line to the parsed file that is created by the load_dhcp_lease_entries.sh script (e.g. `include "/usr/local/etc/unbound/dhcp_lease_entries.conf"`)
+5. Add a cron job for root to execute the bash script every five minutes, which refreshes the parsed leases files and reloads unbound: */5	*	*	*	*	root	/usr/local/etc/unbound/load_dhcp_lease_entries.sh
+
+Note that an alternative to the cron job would be to leverage the ISC DHCP server's ability to execute a command each time a lease is handed out: https://jpmens.net/2011/07/06/execute-a-script-when-isc-dhcp-hands-out-a-new-lease/
 
 
 ### Background by @davidbarnhart
